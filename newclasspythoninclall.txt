@@ -1,7 +1,5 @@
 pip install pandas numpy matplotlib seaborn scikit-learn scikit-learn-extra
 
-
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,42 +9,44 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-# K-Medoids
+
 from sklearn_extra.cluster import KMedoids
 
 
-#  Load Dataset
+
 data = pd.read_csv("Titanic-Dataset.csv")
 
-print("Dataset Loaded Successfully")
+print(" Dataset Loaded Successfully")
 print("Shape:", data.shape)
 data.head()
 
 
-#  Fill missing values
 for col in data.select_dtypes(include=[np.number]):
     data[col].fillna(data[col].mean(), inplace=True)
+
 
 for col in data.select_dtypes(include=['object']):
     data[col].fillna(data[col].mode()[0], inplace=True)
 
-#  Encode categorical columns
+
 le = LabelEncoder()
 for col in data.select_dtypes(include=['object']):
     data[col] = le.fit_transform(data[col])
 
-print("Missing values handled and categorical columns encoded.")
+print(" Missing values handled and categorical columns encoded.")
 data.head()
 
 
-#  Split dataset
 y = data['Survived']
 X = data.drop('Survived', axis=1)
 
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
 
 sc = StandardScaler()
 X_train_scaled = sc.fit_transform(X_train)
@@ -55,22 +55,35 @@ X_test_scaled = sc.transform(X_test)
 print(" Data split and scaled.")
 
 
-#  Logistic Regression
+
 lr = LogisticRegression(max_iter=1000)
 lr.fit(X_train_scaled, y_train)
 y_pred_lr = lr.predict(X_test_scaled)
 acc_lr = accuracy_score(y_test, y_pred_lr)
 
-# Random Forest
+
 rf = RandomForestClassifier(random_state=42)
 rf.fit(X_train, y_train)
 y_pred_rf = rf.predict(X_test)
 acc_rf = accuracy_score(y_test, y_pred_rf)
 
+
+dt = DecisionTreeClassifier(random_state=42)
+dt.fit(X_train, y_train)
+y_pred_dt = dt.predict(X_test)
+acc_dt = accuracy_score(y_test, y_pred_dt)
+
+
 print(f"Logistic Regression Accuracy: {acc_lr:.2f}")
 print(f" Random Forest Accuracy: {acc_rf:.2f}")
+print(f" Decision Tree Accuracy: {acc_dt:.2f}")
 
+
+
+print("\nLogistic Regression Report:\n", classification_report(y_test, y_pred_lr))
 print("\nRandom Forest Report:\n", classification_report(y_test, y_pred_rf))
+print("\nDecision Tree Report:\n", classification_report(y_test, y_pred_dt))
+
 
 sns.heatmap(confusion_matrix(y_test, y_pred_rf), annot=True, fmt='d', cmap='Blues')
 plt.title("Confusion Matrix - Random Forest")
@@ -91,29 +104,28 @@ plt.show()
 
 
 
-kmedoids = KMedoids(n_clusters=3, random_state=20, method='pam')
-clusters_kmedoid = kmedoids.fit_predict(X)
+kmedoids = KMedoids(n_clusters=3, random_state=20)
+clusters_kmedoids = kmedoids.fit_predict(X)
 
-data['KMedoid_Cluster'] = clusters_kmedoid
+data['KMedoids_Cluster'] = clusters_kmedoids
 
-plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=clusters_kmedoid, cmap='plasma')
+plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=clusters_kmedoids, cmap='plasma')
 plt.title("K-Medoids Clustering")
 plt.xlabel(data.columns[0])
 plt.ylabel(data.columns[1])
 plt.show()
 
 
+
 data.hist(figsize=(10, 8), bins=20)
 plt.suptitle("Histograms of Features")
 plt.show()
 
+
 data.groupby('KMeans_Cluster').mean().plot(kind='bar', figsize=(10, 6))
-plt.title("Feature Means by K-Means Cluster")
+plt.title("Feature Means by Cluster (K-Means)")
 plt.show()
 
-data.groupby('KMedoid_Cluster').mean().plot(kind='bar', figsize=(10, 6))
-plt.title("Feature Means by K-Medoids Cluster")
-plt.show()
 
 data.iloc[:30, :5].plot(kind='line', figsize=(10, 5))
 plt.title("Line Plot of First 5 Features (Sample 30 Rows)")
@@ -124,5 +136,4 @@ plt.show()
 sample = X_test.iloc[0].values.reshape(1, -1)
 print("Predicted class (Random Forest):", rf.predict(sample)[0])
 print("Predicted class (Logistic Regression):", lr.predict(sc.transform(sample))[0])
-print("Cluster (K-Means):", kmeans.predict(sample)[0])
-print("Cluster (K-Medoids):", kmedoids.predict(sample)[0])
+print("Predicted class (Decision Tree):", dt.predict(sample)[0])

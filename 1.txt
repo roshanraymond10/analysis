@@ -1,5 +1,7 @@
 pip install pandas numpy matplotlib seaborn scikit-learn scikit-learn-extra
 
+
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,11 +10,10 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.cluster import KMeans
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, r2_score, mean_absolute_error
 
 from sklearn_extra.cluster import KMedoids
 
@@ -27,7 +28,6 @@ data.head()
 
 for col in data.select_dtypes(include=[np.number]):
     data[col].fillna(data[col].mean(), inplace=True)
-
 
 for col in data.select_dtypes(include=['object']):
     data[col].fillna(data[col].mode()[0], inplace=True)
@@ -56,6 +56,7 @@ print(" Data split and scaled.")
 
 
 
+
 lr = LogisticRegression(max_iter=1000)
 lr.fit(X_train_scaled, y_train)
 y_pred_lr = lr.predict(X_test_scaled)
@@ -74,9 +75,19 @@ y_pred_dt = dt.predict(X_test)
 acc_dt = accuracy_score(y_test, y_pred_dt)
 
 
-print(f"Logistic Regression Accuracy: {acc_lr:.2f}")
+linr = LinearRegression()
+linr.fit(X_train_scaled, y_train)
+y_pred_linr = linr.predict(X_test_scaled)
+r2_linr = r2_score(y_test, y_pred_linr)
+mae_linr = mean_absolute_error(y_test, y_pred_linr)
+
+
+
+print(f" Logistic Regression Accuracy: {acc_lr:.2f}")
 print(f" Random Forest Accuracy: {acc_rf:.2f}")
 print(f" Decision Tree Accuracy: {acc_dt:.2f}")
+print(f" Linear Regression R² Score: {r2_linr:.2f}")
+print(f" Linear Regression Mean Absolute Error: {mae_linr:.2f}")
 
 
 
@@ -85,15 +96,16 @@ print("\nRandom Forest Report:\n", classification_report(y_test, y_pred_rf))
 print("\nDecision Tree Report:\n", classification_report(y_test, y_pred_dt))
 
 
+
 sns.heatmap(confusion_matrix(y_test, y_pred_rf), annot=True, fmt='d', cmap='Blues')
 plt.title("Confusion Matrix - Random Forest")
 plt.show()
 
 
 
+
 kmeans = KMeans(n_clusters=3, random_state=20)
 clusters_kmeans = kmeans.fit_predict(X)
-
 data['KMeans_Cluster'] = clusters_kmeans
 
 plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=clusters_kmeans, cmap='viridis')
@@ -104,9 +116,9 @@ plt.show()
 
 
 
+
 kmedoids = KMedoids(n_clusters=3, random_state=20)
 clusters_kmedoids = kmedoids.fit_predict(X)
-
 data['KMedoids_Cluster'] = clusters_kmedoids
 
 plt.scatter(data.iloc[:, 0], data.iloc[:, 1], c=clusters_kmedoids, cmap='plasma')
@@ -137,3 +149,6 @@ sample = X_test.iloc[0].values.reshape(1, -1)
 print("Predicted class (Random Forest):", rf.predict(sample)[0])
 print("Predicted class (Logistic Regression):", lr.predict(sc.transform(sample))[0])
 print("Predicted class (Decision Tree):", dt.predict(sample)[0])
+print("Predicted value (Linear Regression):", linr.predict(sc.transform(sample))[0])
+
+
